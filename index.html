@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lifted Generalised Brillouin Zone</title>
+<meta name="description" content="Interactive plot of the generalised Brillouin zone of a non-reciprocal banded Toeplitz matrix with algebraic off-diagonal decay, lifted to R^3 by the imaginary part of its Schmidt–Spitzer open limit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="style.css">
+<script>
+  // URL options, applied before first paint: ?embed hides the title and notes (for an
+  // iframe), ?theme=light|dark overrides the system colour scheme.
+  (function () {
+    var q = new URLSearchParams(location.search), root = document.documentElement;
+    if (q.has('embed') && q.get('embed') !== '0') root.classList.add('embed');
+    var th = q.get('theme');
+    if (th === 'light' || th === 'dark') root.dataset.theme = th;
+  })();
+</script>
+</head>
+<body>
+<noscript><p style="padding:16px">This page needs JavaScript to compute and draw the GBZ.</p></noscript>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Non-reciprocal banded Toeplitz · Schmidt–Spitzer open limit</p>
+    <h1>Lifted Generalised Brillouin Zone</h1>
+    <p class="lede">Each GBZ point <span class="m">z</span> is drawn at height Im&nbsp;<span class="m">a</span>(<span class="m">z</span>). Where the open limit Λ(<span class="m">a</span>) is real the curve stays in the plane ℂ&nbsp;×&nbsp;{0}; over the complex arcs of Λ it lifts out of it, giving a closed curve in ℝ³.</p>
+  </header>
+
+  <div class="bench">
+    <aside class="controls" aria-label="Parameters">
+      <div class="symbol" id="symbol" aria-live="polite"></div>
+
+      <div class="fields">
+        <div class="field">
+          <div class="field-head"><label for="m">Band width <span class="m">m</span></label><output id="m-out" for="m"></output></div>
+          <input type="range" id="m" min="1" max="20" step="1">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="alpha">Decay exponent <span class="m">α</span></label><output id="alpha-out" for="alpha"></output></div>
+          <input type="range" id="alpha" min="0.5" max="4" step="0.05">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="tR">Sub-diagonal amplitude <span class="m">t</span><sub>R</sub></label><output id="tR-out" for="tR"></output></div>
+          <input type="range" id="tR" min="0.1" max="2" step="0.01">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="tL">Super-diagonal amplitude <span class="m">t</span><sub>L</sub></label><output id="tL-out" for="tL"></output></div>
+          <input type="range" id="tL" min="0.1" max="2" step="0.01">
+        </div>
+      </div>
+
+      <div class="preset-group">
+        <p class="group-label">Examples</p>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="state" id="state"><span class="swatch" aria-hidden="true"></span><span id="state-text">Computing…</span></div>
+
+      <dl class="stats">
+        <dt>GBZ radius |<span class="m">z</span>|</dt><dd id="s-r">–</dd>
+        <dt>max |Im λ| on Λ</dt><dd id="s-im">–</dd>
+        <dt>GBZ length over complex λ</dt><dd id="s-share">–</dd>
+        <dt>Re λ range of Λ</dt><dd id="s-re">–</dd>
+      </dl>
+
+      <div class="probe" id="probe">
+        <span id="probe-hint">Hover the curve to read off a point <span class="m">z</span>, its partner root <span class="m">z</span>′ and their common energy.</span>
+        <div class="row" hidden id="pr-z"><span><span class="m">z</span></span><span class="val" id="pv-z"></span></div>
+        <div class="row" hidden id="pr-p"><span>partner <span class="m">z</span>′</span><span class="val" id="pv-p"></span></div>
+        <div class="row" hidden id="pr-r"><span>|<span class="m">z</span>| = |<span class="m">z</span>′|</span><span class="val" id="pv-r"></span></div>
+        <div class="row" hidden id="pr-l"><span>λ = <span class="m">a</span>(<span class="m">z</span>) = <span class="m">a</span>(<span class="m">z</span>′)</span><span class="val" id="pv-l"></span></div>
+      </div>
+    </aside>
+
+    <section class="plots">
+      <figure>
+        <figcaption>
+          <span class="t">GBZ lifted to ℝ³: (Re <span class="m">z</span>, Im <span class="m">z</span>, Im <span class="m">a</span>(<span class="m">z</span>))</span>
+          <span class="cap-right"><span class="status" id="status"></span><button class="tool" id="view-oblique" type="button">Oblique</button><button class="tool" id="view-top" type="button">Top</button><button class="tool" id="view-side" type="button">Side</button></span>
+        </figcaption>
+        <div id="plot3d" role="img" aria-label="Three-dimensional plot of the lifted generalised Brillouin zone"></div>
+      </figure>
+      <div class="pair">
+        <figure>
+          <figcaption><span class="t">Open limit Λ(<span class="m">a</span>) in the λ-plane</span></figcaption>
+          <div id="plotLam" role="img" aria-label="Open limit spectrum and periodic spectrum in the complex plane"></div>
+        </figure>
+        <figure>
+          <figcaption><span class="t">GBZ in ℂ</span></figcaption>
+          <div id="plotZ" role="img" aria-label="Generalised Brillouin zone in the complex z-plane with the unit circle"></div>
+        </figure>
+      </div>
+    </section>
+  </div>
+
+  <section class="notes">
+    <div class="note">
+      <h2>The matrix</h2>
+      <div class="eq"><span class="m">T<sub>n</sub></span>(<span class="m">a</span>) = (<span class="m">a<sub>j−k</sub></span>)<sub><span class="m">j</span>,<span class="m">k</span>=1</sub><sup><span class="m">n</span></sup>,&nbsp;&nbsp; <span class="m">a<sub>k</sub></span> = <span class="m">t</span><sub>R</sub> <span class="m">k</span><sup>−<span class="m">α</span></sup>,&nbsp; <span class="m">a<sub>−k</sub></span> = <span class="m">t</span><sub>L</sub> <span class="m">k</span><sup>−<span class="m">α</span></sup>&nbsp; (1 ≤ <span class="m">k</span> ≤ <span class="m">m</span>)</div>
+      <p>Real coefficients with algebraic off-diagonal decay, truncated at band width <span class="m">m</span>, and <span class="m">a</span><sub>0</sub> = 0. The matrix is non-reciprocal when <span class="m">t</span><sub>R</sub> ≠ <span class="m">t</span><sub>L</sub>. For <span class="m">m</span> ≥ 2 a constant ratio <span class="m">t</span><sub>L</sub>/<span class="m">t</span><sub>R</sub> cannot be removed by a similarity diag(<span class="m">r<sup>j</sup></span>), so the open limit is free to leave the real axis.</p>
+    </div>
+    <div class="note">
+      <h2>Open limit</h2>
+      <p>Order the 2<span class="m">m</span> roots of <span class="m">z<sup>m</sup></span>(<span class="m">a</span>(<span class="m">z</span>) − λ) by modulus, |<span class="m">z</span><sub>1</sub>| ≤ … ≤ |<span class="m">z</span><sub>2<span class="m">m</span></sub>|. By Schmidt and Spitzer (1960) the eigenvalues of <span class="m">T<sub>n</sub></span>(<span class="m">a</span>) accumulate, as <span class="m">n</span> → ∞, on</p>
+      <div class="eq">Λ(<span class="m">a</span>) = { λ ∈ ℂ : |<span class="m">z<sub>m</sub></span>(λ)| = |<span class="m">z</span><sub><span class="m">m</span>+1</sub>(λ)| },</div>
+      <p>a finite union of analytic arcs, symmetric under λ → λ̄ because the coefficients are real. The grey loop in the λ-plane is the periodic spectrum <span class="m">a</span>(<span class="m">S</span>¹) for comparison.</p>
+    </div>
+    <div class="note">
+      <h2>GBZ and its lift</h2>
+      <div class="eq">GBZ = closure { <span class="m">z<sub>m</sub></span>(λ), <span class="m">z</span><sub><span class="m">m</span>+1</sub>(λ) : λ ∈ Λ(<span class="m">a</span>) },&nbsp;&nbsp; <span class="m">a</span>(GBZ) = Λ(<span class="m">a</span>)</div>
+      <p>The map <span class="m">a</span>: GBZ → Λ is two-to-one away from the arc endpoints, and both partner roots sit at the same height. The plotted curve is ι(<span class="m">z</span>) = (Re <span class="m">z</span>, Im <span class="m">z</span>, Im <span class="m">a</span>(<span class="m">z</span>)). The GBZ has corners over triple points of Λ, and because <span class="m">a</span> is conformal it crosses itself wherever two arcs of Λ cross. Swapping <span class="m">t</span><sub>R</sub> and <span class="m">t</span><sub>L</sub> maps the GBZ to its image under <span class="m">z</span> → 1/<span class="m">z</span> with the same Λ.</p>
+    </div>
+    <div class="note">
+      <h2>How it is computed</h2>
+      <p>For φ ∈ (0, π], solve <span class="m">a</span>(<span class="m">z</span>) = <span class="m">a</span>(<span class="m">z</span>e<sup><span class="m">i</span>φ</sup>), a polynomial of degree 2<span class="m">m</span>. A root is kept when <span class="m">z</span> and <span class="m">z</span>e<sup><span class="m">i</span>φ</sup> are exactly the <span class="m">m</span>-th and (<span class="m">m</span>+1)-th roots of <span class="m">z<sup>m</sup></span>(<span class="m">a</span>(<span class="m">z</span>) − λ) with λ = <span class="m">a</span>(<span class="m">z</span>), to relative tolerance 10<sup>−6</sup>. Roots come from Aberth–Ehrlich iteration warm-started along φ, and the φ step halves near junctions.</p>
+      <p>Checks: <span class="m">m</span> = 1 gives the Hatano–Nelson circle |<span class="m">z</span>| = √(<span class="m">t</span><sub>L</sub>/<span class="m">t</span><sub>R</sub>), and <span class="m">t</span><sub>L</sub> = <span class="m">t</span><sub>R</sub> gives the unit circle. For the default parameters the eigenvalues of <span class="m">T</span><sub>80</sub>, computed with 60-digit arithmetic, lie within 2·10<sup>−3</sup> of Λ.</p>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.34.0/plotly.min.js"></script>
+<script src="gbz-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
